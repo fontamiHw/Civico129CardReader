@@ -1,0 +1,122 @@
+/*
+  ArduinoMqttClient - WiFi Simple Sender
+
+  This example connects to a MQTT broker and publishes a message to
+  a topic once a second.
+
+  The circuit:
+  - Arduino MKR 1000, MKR 1010 or Uno WiFi Rev2 board
+
+  This example code is in the public domain.
+*/
+#include "arduino_secrets.h"
+#include "CardReaderMqtt.h"
+#include "CardReaderNfc.h"
+#include <MFRC522.h>
+
+const char broker[] = "192.168.1.2";
+int port = 1883;
+const char topic[] = "arduino/simple";
+const long interval = 10000;
+unsigned long previousMillis = 0;
+int count = 0;
+bool connected = false;
+
+#define SS_PIN 7
+#define RST_PIN 9
+#define MISO_PIN 10
+#define MOSI_PIN 6
+#define SCK_PIN 4
+
+///////please enter your sensitive data in the Secret tab/arduino_secrets.h
+CardReaderMqtt *cardReaderMqtt;
+CardReaderNfc *cardReaderNfc;
+
+#define LED_MQTT 8
+void setup()
+{
+  // Initialize serial and wait for port to open:
+  Serial.begin(115200);
+  while (!Serial)
+  {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  cardReaderMqtt = new CardReaderMqtt(SECRET_SSID, SECRET_PASS);
+  cardReaderMqtt->addMqttParam(broker, port, MQTT_USER, MQTT_PASS);
+  cardReaderNfc = new CardReaderNfc(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN, RST_PIN);
+  cardReaderNfc->begin();
+
+  // mqqt connected when Not blue
+  pinMode(LED_MQTT, OUTPUT);
+  digitalWrite(LED_MQTT, LOW);
+
+  connected = cardReaderMqtt->connect();
+
+  digitalWrite(LED_MQTT, HIGH);
+}
+
+void loop()
+{
+
+  if (connected)
+  {
+    // call poll() regularly to allow the library to send MQTT keep alives which
+    // avoids being disconnected by the broker
+    // cardReaderMqtt->poll();
+
+    const CardUid cardUid = cardReaderNfc->readCard();
+    if (cardUid.error.code == ERROR_NONE)
+    {
+      Serial.print(F("In hex: "));
+      printHex(cardUid.uid.uidByte, cardUid.uid.size);
+      Serial.println();
+      Serial.print(F("In dec: "));
+      printDec(cardUid.uid.uidByte, cardUid.uid.size);
+      Serial.println();
+    }
+  }
+  // // to avoid having delays in loop, we'll use the strategy from BlinkWithoutDelay
+  // // see: File -> Examples -> 02.Digital -> BlinkWithoutDelay for more info
+  // unsigned long currentMillis = millis();
+
+  // if (currentMillis - previousMillis >= interval) {
+  //   // save the last time a message was sent
+  //   previousMillis = currentMillis;
+
+  //   Serial.print("Sending message to topic: ");
+  //   Serial.println(topic);
+
+  //   // send message, the Print interface can be used to set the message contents
+  //   char msg[50];
+  //   sprintf(msg, "hello %d", count);
+  //   cardReaderMqtt.sendMessage(topic, msg);
+  //   Serial.println(msg);
+
+  //   count++;
+  // }
+}
+
+/**
+ * Helper routine to dump a byte array as hex values to Serial.
+ */
+void printHex(const byte *buffer, byte bufferSize)
+{
+  for (byte i = 0; i < bufferSize; i++)
+  {
+    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i], HEX);
+  }
+}
+
+/**
+ * Helper routine to dump a byte array as dec values to Serial.
+ */
+void printDec(const byte *buffer, byte bufferSize)
+{
+  for (byte i = 0; i < bufferSize; i++)
+  {
+    Serial.print(' ');
+    Serial.print(buffer[i], DEC);
+  }
+}
