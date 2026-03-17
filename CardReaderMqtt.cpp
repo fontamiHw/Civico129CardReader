@@ -54,9 +54,14 @@ void CardReaderMqtt::poll()
 
 void CardReaderMqtt::sendMessage(const char *topic, const char *payload)
 {
+    Serial.print("Sending msg: ");
+    Serial.print(payload);    
+    Serial.print(" to topic: ");
+    Serial.println(topic);
     this->mqttClient->beginMessage(topic);
     this->mqttClient->print(payload);
     this->mqttClient->endMessage();
+    Serial.println("Message sent!");
 }
 bool CardReaderMqtt::connectToWifi()
 {
