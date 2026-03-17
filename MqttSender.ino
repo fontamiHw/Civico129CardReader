@@ -17,7 +17,7 @@
 const char broker[] = "192.168.1.2";
 int port = 1883;
 const char topic[] = "civico129/card-reader";
-const long interval = 10000;
+const long interval = 3000;
 unsigned long previousMillis = 0;
 int count = 0;
 bool connected = false;
@@ -55,28 +55,31 @@ void setup()
   connected = cardReaderMqtt->connect();
 
   digitalWrite(LED_MQTT, HIGH);
+  previousMillis = 0;
 }
 
 void sendMsg(const byte *buffer, byte bufferSize)
-{ 
+{
   int j = 0;
   for (byte i = 0; i < bufferSize; i++)
   {
     if (i == 0)
     {
       sprintf(&msg[j], "%02X", buffer[i]);
-      j+= 2;
+      j += 2;
     }
     else
     {
       sprintf(&msg[j], "-%02X", buffer[i]);
-      j+= 3;
+      j += 3;
     }
   }
   msg[j] = '\0';
 
   // send message
   cardReaderMqtt->sendMessage(topic, msg);
+  previousMillis = millis();
+  digitalWrite(LED_MQTT, LOW);
 }
 
 void loop()
@@ -92,26 +95,21 @@ void loop()
     if (cardUid.error.code == ERROR_NONE)
     {
       Serial.print(F("In hex: "));
-      sendMsg(cardUid.uid.uidByte, cardUid.uid.size);       
+      sendMsg(cardUid.uid.uidByte, cardUid.uid.size);
+    }
+
+    if (previousMillis>0)
+    {
+      unsigned long currentMillis = millis();
+
+      if (currentMillis - previousMillis >= interval)
+      {
+        // save the last time a message was sent
+        previousMillis = currentMillis;
+
+        digitalWrite(LED_MQTT, HIGH);
+        previousMillis = 0;
+      }
     }
   }
-  // // to avoid having delays in loop, we'll use the strategy from BlinkWithoutDelay
-  // // see: File -> Examples -> 02.Digital -> BlinkWithoutDelay for more info
-  // unsigned long currentMillis = millis();
-
-  // if (currentMillis - previousMillis >= interval) {
-  //   // save the last time a message was sent
-  //   previousMillis = currentMillis;
-
-  //   Serial.print("Sending message to topic: ");
-  //   Serial.println(topic);
-
-  //   // send message, the Print interface can be used to set the message contents
-  //   char msg[50];
-  //   sprintf(msg, "hello %d", count);
-  //   cardReaderMqtt.sendMessage(topic, msg);
-  //   Serial.println(msg);
-
-  //   count++;
-  // }
 }
