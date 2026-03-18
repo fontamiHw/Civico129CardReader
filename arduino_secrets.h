@@ -8,4 +8,5 @@
 #define BROKER_PORT 1883
 
 
-#define MQTT_TOPIC "civico129/card-reader"
+#define MQTT_TOPIC_READ     "civico129/card-reader"
+#define MQTT_TOPIC_REGISTER "civico129/card-register"

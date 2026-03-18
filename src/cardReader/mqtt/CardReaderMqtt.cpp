@@ -70,6 +70,41 @@ void CardReaderMqtt::sendMessage(const char *topic, const char *payload)
     Serial.println("Message sent!");
 #endif
 }
+
+void CardReaderMqtt::subscribe(const char *topic)
+{
+#ifdef PRINT
+    Serial.print("Subscribing to topic: ");
+    Serial.println(topic);
+#endif
+    this->mqttClient->subscribe(topic);
+}
+void CardReaderMqtt::handleSubscription()
+{
+    int messageSize = this->mqttClient->parseMessage();
+    if (messageSize)
+    {
+#ifdef PRINT
+        // we received a message, print out the topic and contents
+        Serial.print("Received a message with topic '");
+        Serial.print(this->mqttClient->messageTopic());
+        Serial.print("', length ");
+        Serial.print(messageSize);
+        Serial.println(" bytes:");
+#endif
+        // use the Stream interface to print the contents
+        while (this->mqttClient->available())
+        {
+#ifdef PRINT
+            Serial.print((char)this->mqttClient->read());
+#endif
+        }
+#ifdef PRINT
+        Serial.println();
+#endif
+    }
+}
+
 bool CardReaderMqtt::connectToWifi()
 {
     bool connected = false;

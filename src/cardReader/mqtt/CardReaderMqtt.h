@@ -35,6 +35,8 @@ public:
     bool connect();
     void poll();
     void sendMessage(const char *topic, const char *payload);
+    void subscribe(const char *topic);
+    void handleSubscription();
 
 
 private:

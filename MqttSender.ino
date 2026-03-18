@@ -31,7 +31,6 @@ CardReaderMqtt *cardReaderMqtt;
 CardReaderNfc *cardReaderNfc;
 const char broker[] = BROKER_ADDRESS;
 int port = BROKER_PORT;
-const char topic[] = MQTT_TOPIC;
 ///////end arduino_secrets.h
 char msg[12];
 
@@ -62,6 +61,7 @@ void setup()
   digitalWrite(LED_MQTT, LOW);
 
   connected = cardReaderMqtt->connect();
+  cardReaderMqtt->subscribe(MQTT_TOPIC_REGISTER);
 
   digitalWrite(LED_MQTT, HIGH);
   previousMillis = 0;
@@ -86,7 +86,7 @@ void sendMsg(const byte *buffer, byte bufferSize)
   msg[j] = '\0';
 
   // send message
-  cardReaderMqtt->sendMessage(topic, msg);
+  cardReaderMqtt->sendMessage(MQTT_TOPIC_READ, msg);
   previousMillis = millis();
   digitalWrite(LED_MQTT, LOW);
 }
@@ -98,7 +98,7 @@ void loop()
   {
     // call poll() regularly to allow the library to send MQTT keep alives which
     // avoids being disconnected by the broker
-    // cardReaderMqtt->poll();
+    cardReaderMqtt->poll();
 
     const CardUid cardUid = cardReaderNfc->readCard();
     if (cardUid.error.code == ERROR_NONE)
@@ -120,5 +120,7 @@ void loop()
         previousMillis = 0;
       }
     }
+
+    cardReaderMqtt->handleSubscription();
   }
 }
