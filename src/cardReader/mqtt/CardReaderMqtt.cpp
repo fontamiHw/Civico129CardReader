@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "CardReaderMqtt.h"
+#include "src/global.h"
 
 WiFiClient wifiClient;
 
@@ -54,25 +55,33 @@ void CardReaderMqtt::poll()
 
 void CardReaderMqtt::sendMessage(const char *topic, const char *payload)
 {
+#ifdef PRINT
     Serial.print("Sending msg: ");
-    Serial.print(payload);    
+    Serial.print(payload);
     Serial.print(" to topic: ");
     Serial.println(topic);
+#endif
+
     this->mqttClient->beginMessage(topic);
     this->mqttClient->print(payload);
     this->mqttClient->endMessage();
+
+#ifdef PRINT
     Serial.println("Message sent!");
+#endif
 }
 bool CardReaderMqtt::connectToWifi()
 {
     bool connected = false;
     this->mqttClient = new MqttClient(wifiClient);
 
+#ifdef PRINT
     // attempt to connect to WiFi network:
     Serial.print("Attempting to connect to WPA SSID: ");
     Serial.println(this->wifiParam.ssid);
     Serial.print("and password: ");
     Serial.println(this->wifiParam.pwd);
+#endif
 
     WiFi.begin(this->wifiParam.ssid, this->wifiParam.pwd);
     // Auto reconnect is set true as default
@@ -88,37 +97,53 @@ bool CardReaderMqtt::connectToWifi()
         switch (WiFi.status())
         {
         case WL_NO_SSID_AVAIL:
+#ifdef PRINT
             Serial.println("[WiFi] SSID not found");
+#endif
             break;
         case WL_CONNECT_FAILED:
+#ifdef PRINT
             Serial.print("[WiFi] Failed - WiFi not connected! Reason: ");
+#endif
             return false;
             break;
         case WL_CONNECTION_LOST:
+#ifdef PRINT
             Serial.println("[WiFi] Connection was lost");
+#endif
             break;
         case WL_SCAN_COMPLETED:
+#ifdef PRINT
             Serial.println("[WiFi] Scan is completed");
+#endif
             break;
         case WL_DISCONNECTED:
+#ifdef PRINT
             Serial.println("[WiFi] WiFi is disconnected");
+#endif
             break;
         case WL_CONNECTED:
+#ifdef PRINT
             Serial.println("[WiFi] WiFi is connected!");
             Serial.print("[WiFi] IP address: ");
             Serial.println(WiFi.localIP());
+#endif
             connected = true;
             break;
         default:
+#ifdef PRINT
             Serial.print("[WiFi] WiFi Status: ");
             Serial.println(WiFi.status());
+#endif
             break;
         }
         delay(tryDelay);
 
         if (numberOfTries <= 0)
         {
+#ifdef PRINT
             Serial.print("[WiFi] Failed to connect to WiFi!");
+#endif
             // Use disconnect function to force stop trying to connect
             WiFi.disconnect();
             return false;
@@ -129,8 +154,10 @@ bool CardReaderMqtt::connectToWifi()
         }
     }
 
+#ifdef PRINT
     Serial.println("You're connected to the network");
     Serial.println();
+#endif
 
     return true;
 }
@@ -152,7 +179,8 @@ bool CardReaderMqtt::connectToBroker()
         Serial.print("MQTT connection failed! Error code = ");
         Serial.println(mqttClient->connectError());
 
-        while (1);
+        while (1)
+            ;
     }
 
     Serial.println("You're connected to the MQTT broker!");

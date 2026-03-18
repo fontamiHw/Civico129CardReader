@@ -10,13 +10,11 @@
   This example code is in the public domain.
 */
 #include "arduino_secrets.h"
-#include "CardReaderMqtt.h"
-#include "CardReaderNfc.h"
+#include "src/cardReader/mqtt/CardReaderMqtt.h"
+#include "src/cardReader/nfc/CardReaderNfc.h"
+#include "src/global.h"
 #include <MFRC522.h>
 
-const char broker[] = "192.168.1.2";
-int port = 1883;
-const char topic[] = "civico129/card-reader";
 const long interval = 3000;
 unsigned long previousMillis = 0;
 int count = 0;
@@ -31,17 +29,28 @@ bool connected = false;
 ///////please enter your sensitive data in the Secret tab/arduino_secrets.h
 CardReaderMqtt *cardReaderMqtt;
 CardReaderNfc *cardReaderNfc;
+const char broker[] = BROKER_ADDRESS;
+int port = BROKER_PORT;
+const char topic[] = MQTT_TOPIC;
+///////end arduino_secrets.h
 char msg[12];
 
-#define LED_MQTT 8
 void setup()
 {
+#ifdef PRINT
+  Serial.begin(115200);
+  while (!Serial)
+  {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
   // Initialize serial and wait for port to open:
   Serial.begin(115200);
   while (!Serial)
   {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+#endif
 
   cardReaderMqtt = new CardReaderMqtt(SECRET_SSID, SECRET_PASS);
   cardReaderMqtt->addMqttParam(broker, port, MQTT_USER, MQTT_PASS);
@@ -98,7 +107,7 @@ void loop()
       sendMsg(cardUid.uid.uidByte, cardUid.uid.size);
     }
 
-    if (previousMillis>0)
+    if (previousMillis > 0)
     {
       unsigned long currentMillis = millis();
 
