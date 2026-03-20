@@ -2,6 +2,7 @@
 
 #include "CardReaderMqtt.h"
 #include "src/global.h"
+#include <cstring>
 
 WiFiClient wifiClient;
 
@@ -79,11 +80,17 @@ void CardReaderMqtt::subscribe(const char *topic)
 #endif
     this->mqttClient->subscribe(topic);
 }
-void CardReaderMqtt::handleSubscription()
+
+CardReaderMqttData CardReaderMqtt::handleSubscription()
 {
+    // clean old message
+    if (data.dataLen != 0) {
+        data.dataLen = 0;
+        memset(data.data, 0, MAX_MSG_SIZE);
+    }
+
     int messageSize = this->mqttClient->parseMessage();
-    if (messageSize)
-    {
+    if (messageSize) {
 #ifdef PRINT
         // we received a message, print out the topic and contents
         Serial.print("Received a message with topic '");
@@ -93,16 +100,12 @@ void CardReaderMqtt::handleSubscription()
         Serial.println(" bytes:");
 #endif
         // use the Stream interface to print the contents
-        while (this->mqttClient->available())
-        {
-#ifdef PRINT
-            Serial.print((char)this->mqttClient->read());
-#endif
+        while (this->mqttClient->available()) {
+            data.dataLen = this->mqttClient->read(data.data, MAX_MSG_SIZE);
         }
-#ifdef PRINT
-        Serial.println();
-#endif
     }
+
+    return data;
 }
 
 bool CardReaderMqtt::connectToWifi()

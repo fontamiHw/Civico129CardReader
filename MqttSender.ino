@@ -67,6 +67,21 @@ void setup()
   previousMillis = 0;
 }
 
+void blinkLED()
+{
+    if (previousMillis > 0)
+    {
+      if (delta >= interval)
+      {
+        // save the last time a message was sent
+        previousMillis = currentMillis;
+
+        digitalWrite(LED_MQTT, HIGH);
+        previousMillis = 0;
+      }
+    }
+}
+
 void sendMsg(const byte *buffer, byte bufferSize)
 {
   int j = 0;
@@ -87,10 +102,12 @@ void sendMsg(const byte *buffer, byte bufferSize)
 
   // send message
   cardReaderMqtt->sendMessage(MQTT_TOPIC_READ, msg);
-  previousMillis = millis();
-  digitalWrite(LED_MQTT, LOW);
 }
 
+void triggerLed(){
+  digitalWrite(LED_MQTT, LOW);
+  previousMillis = millis();
+}
 void loop()
 {
 
@@ -105,22 +122,21 @@ void loop()
     {
       Serial.print(F("In hex: "));
       sendMsg(cardUid.uid.uidByte, cardUid.uid.size);
+      triggerLed();
     }
 
-    if (previousMillis > 0)
+    CardReaderMqttData msg = cardReaderMqtt->handleSubscription();
+    if (msg.dataLen > 0)
     {
-      unsigned long currentMillis = millis();
-
-      if (currentMillis - previousMillis >= interval)
-      {
-        // save the last time a message was sent
-        previousMillis = currentMillis;
-
-        digitalWrite(LED_MQTT, HIGH);
-        previousMillis = 0;
-      }
+      triggerLed();
+#ifdef PRINT
+      Serial.print("dataLen: ");
+      Serial.print(msg.dataLen);
+      Serial.print(" data: ");
+      Serial.println((char *)msg.data);
+#endif
     }
 
-    cardReaderMqtt->handleSubscription();
+    blinkLED();
   }
 }

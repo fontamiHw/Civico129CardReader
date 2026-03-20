@@ -6,6 +6,7 @@
 #include <ArduinoMqttClient.h>
 #include <WiFi.h>
 
+#define MAX_MSG_SIZE 100
 typedef struct MqttBrokerParam_t
 {
     char *broker;
@@ -26,6 +27,12 @@ typedef struct WifiParam_t
     char *pwd;
 } WifiParam;
 
+typedef struct CardReaderMqttData
+{
+    int dataLen;
+    uint8_t data[MAX_MSG_SIZE];
+};
+
 class CardReaderMqtt
 {
 public:
@@ -36,8 +43,7 @@ public:
     void poll();
     void sendMessage(const char *topic, const char *payload);
     void subscribe(const char *topic);
-    void handleSubscription();
-
+    CardReaderMqttData handleSubscription();
 
 private:
     CardReaderMqtt(); // not allowed empty constructor
@@ -51,6 +57,7 @@ private:
     MqttClient *mqttClient;
     bool connectToWifi();
     bool connectToBroker();
+    CardReaderMqttData data;
 };
 
 #endif
