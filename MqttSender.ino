@@ -69,17 +69,29 @@ void setup()
 
 void blinkLED()
 {
-    if (previousMillis > 0)
-    {
-      if (delta >= interval)
-      {
-        // save the last time a message was sent
-        previousMillis = currentMillis;
+  if (previousMillis > 0)
+  {
 
-        digitalWrite(LED_MQTT, HIGH);
-        previousMillis = 0;
-      }
+    int currentMillis = millis();
+    int delta = currentMillis - previousMillis;
+
+    if (delta >= 1000 && delta <= 2000)
+    {
+      digitalWrite(LED_MQTT, HIGH);
+    } else if (delta >= 2000)
+    {
+      digitalWrite(LED_MQTT, LOW);
     }
+    
+    if (delta >= interval)
+    {
+      // save the last time a message was sent
+      previousMillis = currentMillis;
+
+      digitalWrite(LED_MQTT, HIGH);
+      previousMillis = 0;
+    }
+  }
 }
 
 void sendMsg(const byte *buffer, byte bufferSize)
@@ -104,7 +116,8 @@ void sendMsg(const byte *buffer, byte bufferSize)
   cardReaderMqtt->sendMessage(MQTT_TOPIC_READ, msg);
 }
 
-void triggerLed(){
+void triggerLed()
+{
   digitalWrite(LED_MQTT, LOW);
   previousMillis = millis();
 }
